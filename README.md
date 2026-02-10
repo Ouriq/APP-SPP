@@ -1,0 +1,1 @@
+Aplikasi berbasis web sederhana yang dibangun menggunakan Google Apps Script. Alat ini berfungsi untuk membuat Surat Permintaan Pembayaran (SPP) beserta lampiran tabel rincian dana secara otomatis, rapi, dan siap cetak (PDF).
