@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* TAMPILAN STANDAR */
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .card-header { background: #0056b3; color: white; font-weight: bold; }
+        
+        /* CONTAINER INPUT (Formulir) */
+        #ui-input { display: block; }
+        
+        /* CONTAINER OUTPUT (Surat/Cetak) - Awalnya Disembunyikan */
+        #ui-print { display: none; background: white; padding: 40px; margin: 0 auto; max-width: 210mm; min-height: 297mm; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+
+        /* FORMAT SURAT */
+        .surat-body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; color: black; }
+        .kop-table { width: 100%; border-bottom: 3px double black; margin-bottom: 20px; }
+        .tabel-spp { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11pt; }
+        .tabel-spp th, .tabel-spp td { border: 1px solid black; padding: 5px; }
+        .tabel-spp th { background-color: #eee !important; text-align: center; -webkit-print-color-adjust: exact; }
+        .ttd-area { float: right; width: 250px; text-align: center; margin-top: 40px; }
+
+        /* KHUSUS SAAT PRINT (CTRL+P) */
+        @media print {
+            body { background: white; padding: 0; margin: 0; }
+            #ui-input { display: none !important; } /* Sembunyikan Form */
+            #ui-print { display: block !important; box-shadow: none; margin: 0; width: 100%; } /* Munculkan Surat */
+            .btn-action { display: none !important; } /* Sembunyikan tombol navigasi */
+            @page { size: A4; margin: 2cm; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui-input" class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="m-0">📝 Input Data SPP</h3>
+        <button class="btn btn-success fw-bold" onclick="tampilkanSurat()">👁️ LIHAT & CETAK</button>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header">1. Data Kop & Surat</div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <label class="fw-bold small">Upload Logo</label>
+                        <input type="file" id="inputLogo" class="form-control form-control-sm" accept="image/*" onchange="simpanLogo()">
+                    </div>
+                    <div class="mb-2">
+                        <label class="fw-bold small">Nama Instansi</label>
+                        <input type="text" id="namaInstansi" class="form-control" value="KEMENTERIAN CONTOH">
+                    </div>
+                    <div class="mb-2">
+                        <label class="fw-bold small">Alamat Instansi</label>
+                        <textarea id="alamatInstansi" class="form-control" rows="2">Jl. Medan Merdeka Barat No. X, Jakarta Pusat</textarea>
+                    </div>
+                    <hr class="my-2">
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <label class="fw-bold small">Nomor Surat</label>
+                            <input type="text" id="nomorSurat" class="form-control" value="001/SPP/2026">
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="fw-bold small">Tanggal</label>
+                            <input type="text" id="tanggalSurat" class="form-control" value="10 Februari 2026">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="fw-bold small">Perihal</label>
+                        <input type="text" id="perihal" class="form-control" value="Permintaan Pembayaran">
+                    </div>
+                    <div class="mb-2">
+                        <label class="fw-bold small">Tujuan (Kepada)</label>
+                        <textarea id="tujuan" class="form-control" rows="2">Bapak Pejabat Pembuat Komitmen&#13;di Tempat</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header">3. Isi & Tanda Tangan</div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <label class="fw-bold small">Pembuka</label>
+                        <textarea id="pembuka" class="form-control" rows="2">Dengan hormat,&#13;Bersama ini kami ajukan rincian permintaan pembayaran sebagai berikut:</textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="fw-bold small">Penutup</label>
+                        <textarea id="penutup" class="form-control" rows="2">Demikian disampaikan, atas perhatiannya diucapkan terima kasih.</textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="fw-bold small">Nama Penanda Tangan</label>
+                        <input type="text" id="namaTtd" class="form-control" value="Nama Pejabat, S.E.">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>2. Tabel Rincian Dana</span>
+                    <button class="btn btn-sm btn-light fw-bold text-primary" onclick="tambahBaris()">+ Tambah Baris</button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered table-sm" id="inputTable">
+                        <thead class="table-light text-center">
+                            <tr>
+                                <th>Uraian</th>
+                                <th width="20%">Pagu</th>
+                                <th width="20%">Lalu</th>
+                                <th width="20%">Ini</th>
+                                <th width="5%">Del</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ui-print">
+    <div class="btn-action text-center mb-4 p-3 bg-light border rounded">
+        <button class="btn btn-warning fw-bold me-2" onclick="kembaliKeEdit()">⬅ KEMBALI EDIT (Data Aman)</button>
+        <button class="btn btn-primary fw-bold" onclick="window.print()">🖨️ CETAK PDF</button>
+    </div>
+
+    <div class="surat-body">
+        <table class="kop-table">
+            <tr>
+                <td width="15%" align="center" id="outLogoPlace"></td>
+                <td align="center">
+                    <h2 style="margin:0; text-transform:uppercase;" id="outInstansi">NAMA INSTANSI</h2>
+                    <p style="margin:0; font-size:10pt;" id="outAlamat">Alamat...</p>
+                </td>
+            </tr>
+        </table>
+
+        <div style="text-align:right; margin-bottom:10px;" id="outTanggal">Tanggal...</div>
+        
+        <table style="width:100%; margin-bottom:20px;">
+            <tr><td width="80">Nomor</td><td>: <span id="outNomor">...</span></td></tr>
+            <tr><td>Lampiran</td><td>: -</td></tr>
+            <tr><td>Perihal</td><td>: <span id="outPerihal">...</span></td></tr>
+        </table>
+
+        <div style="margin-bottom:15px;">
+            Kepada Yth.<br>
+            <span id="outTujuan">...</span>
+        </div>
+
+        <div style="text-align:justify; margin-bottom:10px;" id="outPembuka">...</div>
+
+        <table class="tabel-spp">
+            <thead>
+                <tr>
+                    <th rowspan="2">NO</th>
+                    <th rowspan="2">URAIAN KEGIATAN</th>
+                    <th>PAGU DIPA</th>
+                    <th>SPP LALU</th>
+                    <th>SPP INI</th>
+                    <th>JUMLAH S.D INI</th>
+                    <th>SISA DANA</th>
+                </tr>
+                <tr>
+                    <th>(Rp)</th><th>(Rp)</th><th>(Rp)</th><th>(Rp)</th><th>(Rp)</th>
+                </tr>
+            </thead>
+            <tbody id="outTabelBody"></tbody>
+            <tfoot id="outTabelFoot"></tfoot>
+        </table>
+
+        <div style="text-align:justify; margin-top:15px;" id="outPenutup">...</div>
+
+        <div class="ttd-area">
+            Hormat kami,<br>
+            Pejabat Pembuat Komitmen
+            <br><br><br><br>
+            <strong><u id="outTtd">Nama...</u></strong>
+        </div>
+    </div>
+</div>
+
+<script>
+    // VARIABLE GLOBAL UNTUK LOGO
+    let logoBase64 = null;
+
+    // 1. Simpan Logo saat diupload
+    function simpanLogo() {
+        const file = document.getElementById('inputLogo').files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) { logoBase64 = e.target.result; }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // 2. Fungsi Format Rupiah
+    const fmt = (num) => new Intl.NumberFormat('id-ID').format(num);
+
+    // 3. Tambah Baris Input
+    function tambahBaris() {
+        const tbody = document.querySelector('#inputTable tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="form-control form-control-sm" placeholder="..."></td>
+            <td><input type="number" class="form-control form-control-sm text-end inp-pagu" placeholder="0"></td>
+            <td><input type="number" class="form-control form-control-sm text-end inp-lalu" placeholder="0"></td>
+            <td><input type="number" class="form-control form-control-sm text-end inp-ini" placeholder="0"></td>
+            <td class="text-center"><button class="btn btn-danger btn-sm px-2" onclick="this.closest('tr').remove()">x</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+    // Init 1 baris
+    window.onload = tambahBaris;
+
+    // 4. LOGIKA TAMPILKAN SURAT (PINDAH LAYAR)
+    function tampilkanSurat() {
+        // Transfer Data Teks
+        document.getElementById('outInstansi').innerText = document.getElementById('namaInstansi').value;
+        document.getElementById('outAlamat').innerText = document.getElementById('alamatInstansi').value;
+        document.getElementById('outNomor').innerText = document.getElementById('nomorSurat').value;
+        document.getElementById('outTanggal').innerText = "Jakarta, " + document.getElementById('tanggalSurat').value; // Sesuaikan kota manual jika perlu
+        document.getElementById('outPerihal').innerText = document.getElementById('perihal').value;
+        document.getElementById('outTujuan').innerText = document.getElementById('tujuan').value.replace(/\n/g, "\n");
+        document.getElementById('outPembuka').innerText = document.getElementById('pembuka').value;
+        document.getElementById('outPenutup').innerText = document.getElementById('penutup').value;
+        document.getElementById('outTtd').innerText = document.getElementById('namaTtd').value;
+
+        // Render Logo
+        const logoDiv = document.getElementById('outLogoPlace');
+        logoDiv.innerHTML = logoBase64 ? `<img src="${logoBase64}" style="height:80px; width:auto;">` : ``;
+
+        // Render Tabel
+        const outBody = document.getElementById('outTabelBody');
+        const outFoot = document.getElementById('outTabelFoot');
+        outBody.innerHTML = '';
+        
+        let tPagu=0, tLalu=0, tIni=0, tJml=0, tSisa=0;
+
+        document.querySelectorAll('#inputTable tbody tr').forEach((row, i) => {
+            const inputs = row.querySelectorAll('input');
+            const uraian = inputs[0].value;
+            const pagu = Number(inputs[1].value) || 0;
+            const lalu = Number(inputs[2].value) || 0;
+            const ini  = Number(inputs[3].value) || 0;
+            const jml = lalu + ini;
+            const sisa = pagu - jml;
+
+            tPagu+=pagu; tLalu+=lalu; tIni+=ini; tJml+=jml; tSisa+=sisa;
+
+            outBody.innerHTML += `
+                <tr>
+                    <td align="center">${i+1}</td>
+                    <td>${uraian}</td>
+                    <td align="right">${fmt(pagu)}</td>
+                    <td align="right">${fmt(lalu)}</td>
+                    <td align="right">${fmt(ini)}</td>
+                    <td align="right"><b>${fmt(jml)}</b></td>
+                    <td align="right">${fmt(sisa)}</td>
+                </tr>
+            `;
+        });
+
+        // Total
+        outFoot.innerHTML = `
+            <tr style="font-weight:bold; background-color:#eee;">
+                <td colspan="2" align="center">TOTAL</td>
+                <td align="right">${fmt(tPagu)}</td>
+                <td align="right">${fmt(tLalu)}</td>
+                <td align="right">${fmt(tIni)}</td>
+                <td align="right">${fmt(tJml)}</td>
+                <td align="right">${fmt(tSisa)}</td>
+            </tr>
+        `;
+
+        // GANTI TAMPILAN (HIDE INPUT, SHOW OUTPUT)
+        document.getElementById('ui-input').style.display = 'none';
+        document.getElementById('ui-print').style.display = 'block';
+    }
+
+    // 5. LOGIKA KEMBALI KE EDIT
+    function kembaliKeEdit() {
+        document.getElementById('ui-print').style.display = 'none';
+        document.getElementById('ui-input').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
